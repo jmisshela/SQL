@@ -1,0 +1,102 @@
+/*In this SQL, I'm querying a database with multiple tables in it to quantify statistics about customer and order data*/
+
+/*Analysis 1: How many orders were placed in January?*/
+/*Answer: 9,681 orders*/
+SELECT DISTINCT
+    COUNT(orderID)
+FROM JanSales
+WHERE
+    length(orderID) = 6
+    AND orderID <> 'Order ID';
+
+
+/*Analysis 2: How many of those orders were for an iPhone?*/
+/*Answer: 379 orders*/
+SELECT
+    COUNT(Product)
+FROM JanSales
+WHERE
+    length(orderID) = 6
+    AND orderID <> 'Order ID'
+    AND Product = 'iPhone';
+
+
+/*Analysis 3: Select the customer account numbers for all the orders that were placed in February.*/
+/*Answer: as below queries*/
+SELECT DISTINCT
+    acctnum
+FROM
+    customers
+        INNER JOIN FebSales
+            ON customers.order_id = FebSales.orderID
+WHERE
+    length(orderID) = 6
+    AND orderID <> 'Order ID';
+
+
+/*Analysis 4: Which product was the cheapest one sold in January, and what was the price?*/
+/*Answer: AAA Batteries (4-pack) at $2.99*/
+SELECT DISTINCT
+    Product,
+    price
+FROM JanSales
+WHERE
+    length(orderID) = 6
+    AND orderID <> 'Order ID'
+ORDER BY price ASC;
+
+/*or*/
+SELECT DISTINCT
+    Product,
+    price
+FROM JanSales
+WHERE
+    length(orderID) = 6
+    AND orderID <> 'Order ID'
+    AND price in
+        (SELECT min(price)
+        FROM JanSales);
+
+
+/*Analysis 5: What is the total revenue for each product sold in January?
+(Revenue can be calculated using the number of products sold and the price of the products).*/
+SELECT DISTINCT
+    Product,
+    ROUND((SUM(Quantity)*price)) AS Total_Revenue
+FROM JanSales
+WHERE
+    length(orderID) = 6
+    AND orderID <> 'Order ID'
+GROUP BY Product
+ORDER BY Total_Revenue DESC;
+
+
+/*Analysis 6: Which products were sold in February at 548 Lincoln St, Seattle, WA 98101, how many of each were sold, and what was the total revenue?*/
+/*Answer:
+- Product: AA Batteries (4-pack)
+- Quantity: 2
+- Total Revenue: 8*/
+SELECT DISTINCT
+    Product,
+    SUM(Quantity) AS Purchased_Qty,
+    ROUND(SUM(Quantity)*price) AS Total_Revenue
+FROM FebSales
+WHERE
+    length(orderID) = 6
+    AND orderID <> 'Order ID'
+    AND location = '548 Lincoln St, Seattle, WA 98101'
+GROUP BY Product;
+
+
+/*Analysis 7:How many customers ordered more than 2 products at a time in February, and what was the average amount spent for those customers?*/
+/*Answer: 278 customers with average amount spent at $14*/
+SELECT
+    COUNT(DISTINCT customers.acctnum) AS Total_Cust,
+    ROUND(AVG(FebSales.Quantity*FebSales.price)) AS Avg_Amt_Spent
+FROM FebSales
+    LEFT JOIN customers
+        ON FebSales.orderID = customers.order_id
+WHERE
+    length(orderID) = 6
+    AND orderID <> 'Order ID'
+    AND FebSales.Quantity > 2;
